@@ -7,8 +7,6 @@
  * Implementation of RSA signature verification which uses a pre-processed key
  * for computation.
  */
-
-#include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include "rsa.h"
@@ -229,38 +227,6 @@ static int check_padding(const uint8_t *sig)
 }
 
 
-void print_rsa_public_key(const struct rsa_public_key *key)
-{
-    int i;
-    printf("static const struct rsa_public_key my_key = {\n");
-    printf("    .size   = %u,\n", key->size);
-    printf("    .n0inv  = 0x%08x,\n", key->n0inv);
-    printf("    .n = {\n");
-    for (i = 0; i < RSANUMWORDS; i++) {
-        printf("        0x%08x", key->n[i]);
-        if (i < RSANUMWORDS - 1)
-            printf(",");
-        if ((i + 1) % 4 == 0)
-            printf("\n");
-        else
-            printf(" ");
-    }
-    printf("    },\n");
-    printf("    .rr = {\n");
-    for (i = 0; i < RSANUMWORDS; i++) {
-        printf("        0x%08x", key->rr[i]);
-        if (i < RSANUMWORDS - 1)
-            printf(",");
-        if ((i + 1) % 4 == 0)
-            printf("\n");
-        else
-            printf(" ");
-    }
-    printf("    }\n");
-    printf("};\n");
-}
-
-
 /*
  * Verify a SHA256WithRSA PKCS#1 v1.5 signature against an expected
  * SHA256 hash.
@@ -276,8 +242,6 @@ int rsa_verify(const struct rsa_public_key *key, const uint8_t *signature,
 	       const uint8_t *sha, uint32_t *workbuf32)
 {
 	uint8_t buf[RSANUMBYTES];
-
-	print_rsa_public_key(key);
 
 	/* Copy input to local workspace. */
 	memcpy(buf, signature, RSANUMBYTES);

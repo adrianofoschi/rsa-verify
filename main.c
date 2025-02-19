@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "data/v21/message.h"
-#include "data/v21/public_key.h"
-#include "data/v21/signature.h"
+#include "data/message.h"
+#include "data/public_key.h"
+#include "data/signature.h"
 #include "rsa.h"
 #include "sha256.h"
 

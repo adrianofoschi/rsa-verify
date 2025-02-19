@@ -1,78 +1,80 @@
-# Signature verification for embedded systems
+# RSA Signature verification
 
 Here is the signature verification code extracted from the Chrome OS
-verified boot system "vboot".  This is small convenient source code for
-adding RSA-based signature verification to an embedded system.  For example,
-this code could be used to verify signed firmware update against an embedded
-public key before allowing the update to proceed.
+verified boot system "vboot". Fork of jhallen/rsa-verify.
 
-The RSA and SHA256 routines work well on small ARM microcontrollers.  For
-example it's used in the embedded controller ("EC") found in Chromebooks:
+# Instructions to test JWT signature verification
 
-[https://chromium.googlesource.com/chromiumos/platform/ec/+/refs/heads/master](https://chromium.googlesource.com/chromiumos/platform/ec/+/refs/heads/master)
+The input data you needs are:
 
-(The EC is an interesting project all on its own.  It has a small
-multi-tasking OS built-in).
+```
+test_data/jwk.json
+test_data/jwt.txt
+```
 
-# Instructions
+## 1. Divide JWT in parts
 
-First, get and build the Chrome OS vboot code for its "futility" utility and
-compile it for Linux.  You can get it here:
+```
+test_data/message.txt << header.payload
+test_data/signature.b64 << the latest part of the jwt
+```
 
-[https://chromium.googlesource.com/chromiumos/platform/vboot/+/refs/heads/master](https://chromium.googlesource.com/chromiumos/platform/vboot/+/refs/heads/master)
+## 2. Obtain formatted signature
 
-Build it as follows:
+We need to format signature in array of bytes and put it inside `data/signature.h`.
 
-	gunzip <vboot-master.tar.gz | tar -xf -
-	cd _vboot_reference
-	make
-	cd ..
+Convert signature from base64 to base64url
+```
+tr '_-' '/+' < signature.b64 > sig_std.b64
+```
 
-Next, build the signature verification code here, just type:
+Check the signature length
+```
+wc -c < sig_std.b64
+```
 
-	make
+if it is not a multiple of 4 add the padding i.e. the necessary = at the end
+```
+echo "=" >> sig_std.b64
+```
 
-Main.c is an example of how to use the code.  A signature and public key
-are included in main.c.  In your case, you would put this code into your own
-bootloader.  Verify the example signature like this:
+decode Base64 string to binary
+```
+base64 -d sig_std.b64 > sig.bin
+```
 
-	./verify test/data
-	Signature matches!
+verify that sig.bin is 256 bytes long
+```
+wc -c < sig.bin
+```
 
-Here is the procedure to sign your own data:
+generates signature.h header
+```
+xxd -i sig.bin
+```
 
-Create a private key "key.pem", don't share this:
+## 3. Obtain formatted message
+We need to format message in array of bytes and put it inside `data/message.h`.
+```
+xxd -i header+payload.txt
+```
 
-	cd test
-	openssl genrsa -F4 -out key.pem 2048
+## 4. Obtain formatted public key (JWK)
+We need to format public key (JWK) in a specific struct and put it inside `data/public_key.h`.
 
-Create key pair from .pem in "vb21_struct.h" format:
+Convert JWK to PEM
+```
+python3 utils/jwk_to_pem.py test_data/jwk.json >> test_data/key.pem
+```
 
-	../_vboot_reference/build/futility/futility create key.pem
+Convert PEM to c rsa struct
+```
+python3 utils/pem_to_rsa.py test_data/key.pem
+```
 
-	this generates: key.vbprik2 and key.vbpubk2
+# Usage
 
-Don't share key.vbprik2.  The public key "key.vbpubk2" needs to be included
-with your code.
-
-Sign some binary data:
-
-	../_vboot_reference/build/futility/futility sign --type rwsig --prikey key.vbprik2 data sig
-
-This generates the signature for "data" in a file "sig".  The signature
-should be transported along with the "data".
-
-You can verify the signature using the public key using like this:
-
-	../_vboot_reference/build/futility/futility verify --type rwsig --pubkey key.vbpubk2 -f data sig
-
-You can use xxd to convert "sig" and "key.vbpubk2" into a C literal for
-inclusion into main.c:
-
-	xxd --include sig
-	xxd --include key.vbpubk2
-
-Note that the vb21_struct.h signature format supports many Chrome-specific
-file formats as well as more complex key handling.  Take a look at "futility
-sign help".  Anyway, the "rwsig" type seems to be the simplest and would
-cover many microcontroller use cases.
+```
+make
+./verify
+```
