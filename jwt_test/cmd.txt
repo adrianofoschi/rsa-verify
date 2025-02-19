@@ -1,0 +1,39 @@
+JWT
+
+############ messaggio
+#data da stringa ad array di byte
+xxd -i header+payload.txt > data.h
+
+
+
+########## signature
+
+#ora convertiamo la firma da stringa base64 ad base64url
+tr '_-' '/+' < signature.b64 > sig_std.b64
+
+#controlla la lunghezza della firma
+wc -c < sig_std.b64
+
+#se non è multiplo di 4 aggiungi il padding cioè gli = necessari alla fine
+echo "=" >> sig_std.b64
+
+#Decodifica la stringa Base64 in binario
+base64 -d sig_std.b64 > sig.bin
+
+#verifica che sig.bin sia lungo 256 byte
+wc -c < sig.bin
+
+#genera un header signature.h
+xxd -i sig.bin > signature.h
+
+
+######## chiave pubblica
+
+{
+      "kty": "RSA",
+      "kid": "5d12ab782cb6096285f69e48aea99079bb59cb86",
+      "e": "AQAB",
+      "n": "uac7NRcojCutcceWq1nrpLGJjQ7ywvgWsUcb1DWMKJ3KNNHiRzh9jshoi9tmq1zlarJ_h7GQg8iU1qD7SgpVYJmjlKG1MNVRAtuNrNMC0UAnNfG7mBBNorHFndfp-9cLTiMjXSXRzhNqiMvTVKeolRdMB2lH9RzJnwlpXtvUbD7M1pXOlPlMaOy1zxUnHn0uszU5mPRQk79i03BNrAdhwrAUB-ZuMnqpjaUcb9VU3KIwuZNPtsVenLN12sRYpaZ6WBw8Q9q7fAoaJUovM0Go8deC9pJYyxJuHdVo9HP0osyzg3g_rOYi14wmvMBuiDf3F4pTnudAfFyl3d0Mn_i4ZQ",
+      "alg": "RS256",
+      "use": "sig"
+    }
