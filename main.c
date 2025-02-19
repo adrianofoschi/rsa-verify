@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include "data.h"
 #include "rsa.h"
 #include "sha256.h"
 
@@ -79,20 +80,11 @@ int main(int argc, char *argv[])
     int status;
 
     // Image
-    FILE *f = fopen(argv[1], "r");
-    fseek(f, 0, SEEK_END);
-    rwlen = ftell(f);
-    rewind(f);
+    rwdata = data;
+    rwlen = data_len;
 
-    rwdata = (uint8_t *)malloc(rwlen);
-    if (1 != fread(rwdata, rwlen, 1, f)) {
-        printf("Couldn't load %s\n", argv[1]);
-        return -1;
-    }
-    fclose(f);
-
-	  struct sha256_ctx ctx;
-	  uint8_t *hash;
+	struct sha256_ctx ctx;
+	uint8_t *hash;
     SHA256_init(&ctx);
     SHA256_update(&ctx, rwdata, rwlen);
     hash = SHA256_final(&ctx);
