@@ -56,7 +56,7 @@ xxd -i sig.bin
 ## 3. Obtain formatted message
 We need to format message in array of bytes and put it inside `data/message.h`.
 ```
-xxd -i header+payload.txt
+xxd -i message.txt
 ```
 
 ## 4. Obtain formatted public key (JWK)
